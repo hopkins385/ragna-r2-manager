@@ -7,11 +7,13 @@ import {
   uploadObject,
 } from "@/actions";
 import { useAlert } from "@/hooks/useAlert";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function useR2Bucket() {
   const { showAlert } = useAlert();
+  const { confirm } = useConfirmDialog();
   const [buckets, setBuckets] = useState<string[]>([]);
   const [selectedBucket, setSelectedBucket] = useState<string>("");
   const [objects, setObjects] = useState<R2Object[]>([]);
@@ -94,12 +96,15 @@ export function useR2Bucket() {
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedKeys.size} objects from ${selectedBucket}?`,
-      )
-    )
-      return;
+    const confirmed = await confirm({
+      title: "Delete Objects",
+      description: `Are you sure you want to delete ${selectedKeys.size} objects from ${selectedBucket}?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "destructive",
+    });
+
+    if (!confirmed) return;
 
     setDeleting(true);
     try {
@@ -139,15 +144,25 @@ export function useR2Bucket() {
   };
 
   const handleDeleteAll = async () => {
-    const confirm1 = confirm(
-      `WARNING: This will delete ALL objects in bucket "${selectedBucket}". This action cannot be undone.`,
-    );
-    if (!confirm1) return;
+    const confirmed1 = await confirm({
+      title: "Delete All Objects - Warning",
+      description: `This will delete ALL objects in bucket "${selectedBucket}". This action cannot be undone.`,
+      confirmText: "Continue",
+      cancelText: "Cancel",
+      variant: "destructive",
+    });
 
-    const confirm2 = confirm(
-      `Are you absolutely sure? All data in "${selectedBucket}" will be lost forever.`,
-    );
-    if (!confirm2) return;
+    if (!confirmed1) return;
+
+    const confirmed2 = await confirm({
+      title: "Final Confirmation",
+      description: `Are you absolutely sure? All data in "${selectedBucket}" will be lost forever.`,
+      confirmText: "Delete All",
+      cancelText: "Cancel",
+      variant: "destructive",
+    });
+
+    if (!confirmed2) return;
 
     setDeleting(true);
     try {
