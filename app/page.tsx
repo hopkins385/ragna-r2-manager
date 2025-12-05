@@ -1,4 +1,5 @@
-import R2Bucket from "./components/R2Bucket";
+import { AlertContainer } from "@/components/AlertContainer";
+import R2Bucket from "@/components/R2Bucket";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
             Manage objects from your R2 buckets
           </p>
         </div>
+        <AlertContainer />
         <R2Bucket />
       </div>
     </main>
