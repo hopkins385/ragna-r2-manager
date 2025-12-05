@@ -1,10 +1,11 @@
-# R2 Cleaner
+# R2 Bucket Manager
 
 A Next.js application to mass delete objects from Cloudflare R2 using the S3 compatible TypeScript client.
 
 ## Setup
 
 1.  Install dependencies:
+
     ```bash
     npm install
     ```
