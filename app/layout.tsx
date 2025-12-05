@@ -1,4 +1,3 @@
-import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Toaster } from "@/ui/sonner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -32,10 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AlertProvider>
-          <ConfirmDialogProvider>
-            {children}
-            <ConfirmDialog />
-          </ConfirmDialogProvider>
+          <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
         </AlertProvider>
         <Toaster position="top-right" />
       </body>

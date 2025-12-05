@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { createContext, ReactNode, useCallback, useState } from "react";
 
 export interface ConfirmDialogOptions {
@@ -60,6 +61,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmDialogContext.Provider value={{ confirm, ...dialogState }}>
       {children}
+      <ConfirmDialog />
     </ConfirmDialogContext.Provider>
   );
 }

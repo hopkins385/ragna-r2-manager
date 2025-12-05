@@ -68,9 +68,9 @@ export default function R2Bucket() {
               <SelectValue placeholder="Select a bucket" />
             </SelectTrigger>
             <SelectContent>
-              {buckets.map((b) => (
-                <SelectItem key={b} value={b}>
-                  {b}
+              {buckets.map((bucket) => (
+                <SelectItem key={bucket} value={bucket}>
+                  {bucket}
                 </SelectItem>
               ))}
             </SelectContent>

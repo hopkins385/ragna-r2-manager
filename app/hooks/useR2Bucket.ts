@@ -23,7 +23,7 @@ export function useR2Bucket() {
   const [deleting, setDeleting] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
-  const loadBuckets = async () => {
+  const loadBuckets = useCallback(async () => {
     try {
       const bucketList = await listBuckets();
       setBuckets(bucketList);
@@ -37,7 +37,7 @@ export function useR2Bucket() {
         title: "Load Error",
       });
     }
-  };
+  }, []);
 
   const fetchObjects = useCallback(
     async (reset = false) => {
