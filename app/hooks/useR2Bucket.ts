@@ -8,6 +8,7 @@ import {
 } from "@/actions";
 import { useAlert } from "@/hooks/useAlert";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export function useR2Bucket() {
   const { showAlert } = useAlert();
@@ -117,6 +118,11 @@ export function useR2Bucket() {
       setObjects((prev) => prev.filter((o) => !deletedSet.has(o.key)));
       setSelectedKeys(new Set());
 
+      // Show success toast
+      toast.success(
+        `Deleted ${result.deleted?.length || 0} objects from ${selectedBucket}`,
+      );
+
       // If we deleted everything visible and there's more, fetch more
       if (objects.length - deletedSet.size === 0 && hasMore) {
         fetchObjects(true);
@@ -146,10 +152,10 @@ export function useR2Bucket() {
     setDeleting(true);
     try {
       const result = await deleteAllObjects(selectedBucket);
-      // show..(`Successfully deleted ${result.count} objects.`, {
-      //   title: "Success",
-      // });
-      // Refresh
+      if (!result.success) {
+        throw new Error("Failed to delete all objects");
+      }
+      toast.success(`All objects deleted successfully from ${selectedBucket}`);
       fetchObjects(true);
     } catch (err) {
       console.error(err);
@@ -180,6 +186,8 @@ export function useR2Bucket() {
         formData.append("file", file);
         await uploadObject(selectedBucket, formData);
       }
+      toast.success(`Uploaded ${files.length} files to ${selectedBucket}`);
+      // Refresh object list
       fetchObjects(true);
     } catch (err) {
       console.error("Upload failed", err);

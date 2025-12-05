@@ -1,3 +1,4 @@
+import { Toaster } from "@/ui/sonner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AlertProvider } from "./context/AlertContext";
@@ -29,6 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AlertProvider>{children}</AlertProvider>
+        <Toaster position="top-right" />
       </body>
     </html>
   );
