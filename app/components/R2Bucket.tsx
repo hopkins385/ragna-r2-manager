@@ -2,6 +2,7 @@
 
 import FileUploader from "@/components/FileUploader";
 import { useR2Bucket } from "@/hooks/useR2Bucket";
+import { useTreeView } from "@/hooks/useTreeView";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import {
@@ -28,27 +29,8 @@ import {
   TableRow,
 } from "@/ui/table";
 import { ChevronRightIcon, FolderIcon, Trash2Icon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { TableMenu } from "./TableMenu";
-
-// Helper type for virtual folder items
-interface FolderItem {
-  name: string;
-  isFolder: true;
-  fullPath: string;
-}
-
-interface FileItem {
-  name: string;
-  isFolder: false;
-  object: {
-    key: string;
-    size?: number;
-    lastModified?: Date;
-  };
-}
-
-type DisplayItem = FolderItem | FileItem;
 
 export default function R2Bucket() {
   const {
@@ -69,9 +51,16 @@ export default function R2Bucket() {
     handleUpload,
   } = useR2Bucket();
 
-  // Tree view state
-  const [treeViewEnabled, setTreeViewEnabled] = useState(false);
-  const [currentPrefix, setCurrentPrefix] = useState("");
+  const {
+    treeViewEnabled,
+    setTreeViewEnabled,
+    currentPrefix,
+    setCurrentPrefix,
+    displayItems,
+    navigateToFolder,
+    breadcrumbs,
+    resetPrefix,
+  } = useTreeView(objects);
 
   // Fetch buckets on mount
   useEffect(() => {
@@ -80,81 +69,8 @@ export default function R2Bucket() {
 
   // Reset prefix when bucket changes or tree view is toggled
   useEffect(() => {
-    setCurrentPrefix("");
+    resetPrefix();
   }, [selectedBucket, treeViewEnabled]);
-
-  // Parse objects into folders and files based on current prefix
-  const displayItems = useMemo<DisplayItem[]>(() => {
-    if (!treeViewEnabled) {
-      // Return all objects as-is when tree view is disabled
-      return objects.map((obj) => ({
-        name: obj.key,
-        isFolder: false as const,
-        object: obj,
-      }));
-    }
-
-    const folders = new Set<string>();
-    const files: FileItem[] = [];
-
-    objects.forEach((obj) => {
-      // Check if the key starts with the current prefix
-      if (!obj.key.startsWith(currentPrefix)) {
-        return;
-      }
-
-      // Get the remaining part after the current prefix
-      const remaining = obj.key.slice(currentPrefix.length);
-
-      // Find the first slash in the remaining part
-      const slashIndex = remaining.indexOf("/");
-
-      if (slashIndex === -1) {
-        // No slash means this is a file at the current level
-        files.push({
-          name: remaining,
-          isFolder: false,
-          object: obj,
-        });
-      } else {
-        // There's a slash, so extract the folder name
-        const folderName = remaining.slice(0, slashIndex);
-        folders.add(folderName);
-      }
-    });
-
-    // Convert folders to FolderItems
-    const folderItems: FolderItem[] = Array.from(folders).map((name) => ({
-      name,
-      isFolder: true,
-      fullPath: currentPrefix + name + "/",
-    }));
-
-    // Sort folders first, then files
-    return [
-      ...folderItems.sort((a, b) => a.name.localeCompare(b.name)),
-      ...files.sort((a, b) => a.name.localeCompare(b.name)),
-    ];
-  }, [objects, treeViewEnabled, currentPrefix]);
-
-  // Navigate into a folder
-  const navigateToFolder = (folderPath: string) => {
-    setCurrentPrefix(folderPath);
-  };
-
-  // Navigate up to parent folder
-  const navigateUp = () => {
-    if (!currentPrefix) return;
-    const parts = currentPrefix.split("/").filter(Boolean);
-    parts.pop();
-    setCurrentPrefix(parts.length > 0 ? parts.join("/") + "/" : "");
-  };
-
-  // Get breadcrumb parts
-  const breadcrumbs = useMemo(() => {
-    if (!currentPrefix) return [];
-    return currentPrefix.split("/").filter(Boolean);
-  }, [currentPrefix]);
 
   return (
     <>
