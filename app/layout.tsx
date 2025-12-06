@@ -1,7 +1,6 @@
 import { Toaster } from "@/ui/sonner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { AlertProvider } from "./context/AlertContext";
 import { ConfirmDialogProvider } from "./context/ConfirmDialogContext";
 import "./globals.css";
 
@@ -30,10 +29,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AlertProvider>
-          <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
-        </AlertProvider>
-        <Toaster position="top-right" />
+        <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

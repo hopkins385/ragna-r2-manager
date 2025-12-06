@@ -27,7 +27,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui/table";
+import { Trash2Icon } from "lucide-react";
 import { useEffect } from "react";
+import { TableMenu } from "./TableMenu";
 
 export default function R2Bucket() {
   const {
@@ -89,19 +91,19 @@ export default function R2Bucket() {
         </div>
         <div className="flex gap-2">
           <Button
-            variant="destructive"
+            variant="outline"
             onClick={handleDelete}
             disabled={selectedKeys.size === 0 || deleting}
+            className="hover:text-destructive"
           >
+            <Trash2Icon className="h-4 w-4" />
             {deleting ? "Deleting..." : "Delete Selected"}
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDeleteAll}
-            disabled={!selectedBucket || deleting}
-          >
-            Delete ALL Objects
-          </Button>
+          <TableMenu
+            handleDeleteAll={handleDeleteAll}
+            selectedBucket={selectedBucket}
+            deleting={deleting}
+          />
         </div>
       </div>
 

@@ -6,13 +6,11 @@ import {
   R2Object,
   uploadObject,
 } from "@/actions";
-import { useAlert } from "@/hooks/useAlert";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function useR2Bucket() {
-  const { showAlert } = useAlert();
   const { confirm } = useConfirmDialog();
   const [buckets, setBuckets] = useState<string[]>([]);
   const [selectedBucket, setSelectedBucket] = useState<string>("");
@@ -32,10 +30,7 @@ export function useR2Bucket() {
       }
     } catch (err) {
       console.error("Failed to load buckets", err);
-      showAlert("Failed to load buckets. Check your credentials.", {
-        variant: "destructive",
-        title: "Load Error",
-      });
+      toast.error("Failed to load buckets. Check your credentials.");
     }
   }, []);
 
@@ -55,10 +50,7 @@ export function useR2Bucket() {
         setHasMore(!!result.nextCursor);
       } catch (err) {
         console.error(err);
-        showAlert("Failed to load objects.", {
-          variant: "destructive",
-          title: "Load Error",
-        });
+        toast.error("Failed to load objects.");
       } finally {
         setLoading(false);
       }
@@ -112,10 +104,7 @@ export function useR2Bucket() {
       const result = await deleteObjects(selectedBucket, keysToDelete);
 
       if (result.errors.length > 0) {
-        showAlert(
-          `Failed to delete some objects: ${result.errors.length} errors.`,
-          { variant: "destructive", title: "Delete Error" },
-        );
+        throw new Error("Some objects failed to delete");
       }
 
       // Remove deleted objects from state
@@ -134,10 +123,7 @@ export function useR2Bucket() {
       }
     } catch (err) {
       console.error(err);
-      showAlert("Failed to delete objects.", {
-        variant: "destructive",
-        title: "Delete Error",
-      });
+      toast.error("Failed to delete selected objects.");
     } finally {
       setDeleting(false);
     }
@@ -174,10 +160,7 @@ export function useR2Bucket() {
       fetchObjects(true);
     } catch (err) {
       console.error(err);
-      showAlert("Failed to delete all objects.", {
-        variant: "destructive",
-        title: "Delete Error",
-      });
+      toast.error("Failed to delete all objects.");
     } finally {
       setDeleting(false);
     }
@@ -206,10 +189,7 @@ export function useR2Bucket() {
       fetchObjects(true);
     } catch (err) {
       console.error("Upload failed", err);
-      showAlert("Failed to upload files.", {
-        variant: "destructive",
-        title: "Upload Error",
-      });
+      toast.error("Failed to upload files.");
     }
   };
 
