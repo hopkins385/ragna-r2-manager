@@ -6,13 +6,15 @@ import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 interface FileUploaderProps {
-  onUpload: (files: File[]) => Promise<void>;
+  onUpload: (files: File[], prefix?: string) => Promise<void>;
   disabled?: boolean;
+  prefix?: string;
 }
 
 export default function FileUploader({
   onUpload,
   disabled,
+  prefix,
 }: FileUploaderProps) {
   const [uploading, setUploading] = useState(false);
 
@@ -22,12 +24,12 @@ export default function FileUploader({
 
       setUploading(true);
       try {
-        await onUpload(acceptedFiles);
+        await onUpload(acceptedFiles, prefix);
       } finally {
         setUploading(false);
       }
     },
-    [onUpload],
+    [onUpload, prefix],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -59,6 +61,11 @@ export default function FileUploader({
             <p className="text-muted-foreground text-xs">
               or click to select files to upload
             </p>
+            {prefix && (
+              <p className="text-muted-foreground mt-2 text-xs">
+                Upload to: <span className="font-medium">{prefix}</span>
+              </p>
+            )}
           </div>
         )}
       </CardContent>

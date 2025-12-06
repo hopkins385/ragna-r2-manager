@@ -182,7 +182,11 @@ export default function R2Bucket() {
       </Card>
 
       {selectedBucket && (
-        <FileUploader onUpload={handleUpload} disabled={loading || deleting} />
+        <FileUploader
+          onUpload={handleUpload}
+          disabled={loading || deleting}
+          prefix={treeViewEnabled ? currentPrefix : undefined}
+        />
       )}
 
       <div className="flex items-center justify-between">

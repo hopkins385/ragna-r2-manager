@@ -166,25 +166,18 @@ export function useR2Bucket() {
     }
   };
 
-  const handleUpload = async (files: File[]) => {
+  const handleUpload = async (files: File[], prefix: string = "") => {
     if (!selectedBucket) return;
-
-    // Optimistic UI or separate loading state for upload could be added here
-    // For now, we'll just use the global loading state or a local one if we were inside the component
-    // But since this is a hook, let's just return the promise and let the component handle UI feedback if needed,
-    // or we can add an uploading state to the hook.
-
-    // Let's add a simple uploading state to the hook?
-    // Actually, let's just do it one by one and refresh.
 
     try {
       // We could parallelize this, but let's do it sequentially for simplicity and error handling
       for (const file of files) {
         const formData = new FormData();
         formData.append("file", file);
-        await uploadObject(selectedBucket, formData);
+        await uploadObject(selectedBucket, formData, prefix);
       }
-      toast.success(`Uploaded ${files.length} files to ${selectedBucket}`);
+      const location = prefix ? `${prefix} folder` : selectedBucket;
+      toast.success(`Uploaded ${files.length} files to ${location}`);
       // Refresh object list
       fetchObjects(true);
     } catch (err) {

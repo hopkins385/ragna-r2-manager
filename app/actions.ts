@@ -145,7 +145,11 @@ export async function deleteAllObjects(bucketName: string) {
   }
 }
 
-export async function uploadObject(bucketName: string, formData: FormData) {
+export async function uploadObject(
+  bucketName: string,
+  formData: FormData,
+  prefix: string = "",
+) {
   if (!bucketName) {
     throw new Error("Bucket name is required");
   }
@@ -159,15 +163,18 @@ export async function uploadObject(bucketName: string, formData: FormData) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Construct the full key with the prefix (folder path)
+    const key = prefix ? `${prefix}${file.name}` : file.name;
+
     const command = new PutObjectCommand({
       Bucket: bucketName,
-      Key: file.name,
+      Key: key,
       Body: buffer,
       ContentType: file.type,
     });
 
     await s3Client.send(command);
-    return { success: true, key: file.name };
+    return { success: true, key };
   } catch (error) {
     console.error("Error uploading object:", error);
     throw new Error("Failed to upload object");
