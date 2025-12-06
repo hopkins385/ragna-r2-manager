@@ -170,9 +170,16 @@ export default function R2Bucket() {
               <TableHead className="w-12">
                 <Checkbox
                   checked={
-                    objects.length > 0 && selectedKeys.size === objects.length
+                    treeViewEnabled
+                      ? displayItems.filter((item) => !item.isFolder).length > 0 &&
+                        displayItems
+                          .filter((item) => !item.isFolder)
+                          .every((item) => selectedKeys.has(item.object.key))
+                      : objects.length > 0 && selectedKeys.size === objects.length
                   }
-                  onCheckedChange={toggleSelectAll}
+                  onCheckedChange={() =>
+                    toggleSelectAll(treeViewEnabled, displayItems)
+                  }
                 />
               </TableHead>
               <TableHead>Key</TableHead>

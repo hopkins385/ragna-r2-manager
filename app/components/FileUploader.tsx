@@ -1,7 +1,7 @@
 "use client";
 
-import { processDroppedItems } from "@/lib/folder-utils";
 import type { FileWithPath } from "@/lib/folder-utils";
+import { processDroppedItems } from "@/lib/folder-utils";
 import { Card, CardContent } from "@/ui/card";
 import { Upload } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -74,7 +74,6 @@ export default function FileUploader({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     disabled: disabled || uploading,
-    noClick: false,
   });
 
   return (
@@ -98,7 +97,9 @@ export default function FileUploader({
           </p>
         ) : (
           <div className="text-center">
-            <p className="mb-1 text-sm font-medium">Drag & drop files or folders here</p>
+            <p className="mb-1 text-sm font-medium">
+              Drag & drop files or folders here
+            </p>
             <p className="text-muted-foreground text-xs">
               or click to select files to upload (folders up to 3 levels deep)
             </p>

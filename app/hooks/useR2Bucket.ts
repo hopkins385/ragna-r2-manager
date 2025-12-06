@@ -81,11 +81,28 @@ export function useR2Bucket() {
     setSelectedKeys(newSelected);
   };
 
-  const toggleSelectAll = () => {
-    if (selectedKeys.size === objects.length && objects.length > 0) {
-      setSelectedKeys(new Set());
+  const toggleSelectAll = (
+    treeViewEnabled?: boolean,
+    displayItems?: Array<{ isFolder: boolean; object?: R2Object }>,
+  ) => {
+    // Determine which items to select/deselect
+    const itemsToConsider = treeViewEnabled && displayItems
+      ? displayItems.filter((item) => !item.isFolder && item.object).map((item) => item.object!.key)
+      : objects.map((o) => o.key);
+
+    // Check if all items in scope are already selected
+    const allSelected = itemsToConsider.length > 0 && itemsToConsider.every((key) => selectedKeys.has(key));
+
+    if (allSelected) {
+      // Deselect all items in scope
+      const newSelected = new Set(selectedKeys);
+      itemsToConsider.forEach((key) => newSelected.delete(key));
+      setSelectedKeys(newSelected);
     } else {
-      setSelectedKeys(new Set(objects.map((o) => o.key)));
+      // Select all items in scope
+      const newSelected = new Set(selectedKeys);
+      itemsToConsider.forEach((key) => newSelected.add(key));
+      setSelectedKeys(newSelected);
     }
   };
 
