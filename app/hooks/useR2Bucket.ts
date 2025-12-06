@@ -59,7 +59,7 @@ export function useR2Bucket() {
     [cursor, selectedBucket],
   );
 
-  // Fetch objects when bucket changes
+  // Watch: When bucket changes, Fetch objects
   useEffect(() => {
     if (selectedBucket) {
       setObjects([]);
@@ -113,7 +113,6 @@ export function useR2Bucket() {
       setObjects((prev) => prev.filter((o) => !deletedSet.has(o.key)));
       setSelectedKeys(new Set());
 
-      // Show success toast
       toast.success(
         `Deleted ${result.deleted?.length || 0} objects from ${selectedBucket}`,
       );
@@ -215,10 +214,6 @@ export function useR2Bucket() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       }
-
-      toast.success(
-        `Downloaded ${keysToDownload.length} file${keysToDownload.length > 1 ? "s" : ""}`,
-      );
     } catch (err) {
       console.error("Download failed", err);
       toast.error("Failed to download files.");
