@@ -2,6 +2,8 @@
 
 A modern Next.js application for managing Cloudflare R2 bucket objects with an intuitive interface. Featuring file uploads, mass deletions, and multi-bucket support.
 
+![Bucket Manager](https://static.ragna.io/bucket-manager/manager-overview.png)
+
 ## Features
 
 - **Multi-Bucket Support**: Switch between multiple R2 buckets from a single interface
