@@ -62,15 +62,15 @@ export default function R2Bucket() {
     resetPrefix,
   } = useTreeView(objects);
 
-  // Fetch buckets on mount
-  useEffect(() => {
-    loadBuckets();
-  }, []);
-
-  // Reset prefix when bucket changes or tree view is toggled
+  // Watch: When bucket changes or tree view is toggled, Reset prefix to root
   useEffect(() => {
     resetPrefix();
   }, [selectedBucket, treeViewEnabled]);
+
+  // OnMounted: Fetch buckets
+  useEffect(() => {
+    loadBuckets();
+  }, []);
 
   return (
     <>
@@ -119,7 +119,7 @@ export default function R2Bucket() {
             />
             <label
               htmlFor="tree-view"
-              className="cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               Tree View
             </label>
@@ -143,39 +143,11 @@ export default function R2Bucket() {
         </div>
       </div>
 
-      {treeViewEnabled && breadcrumbs.length > 0 && (
-        <div className="flex items-center gap-2 text-sm">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCurrentPrefix("")}
-            className="h-7 px-2"
-          >
-            Root
-          </Button>
-          {breadcrumbs.map((part, index) => {
-            const isLast = index === breadcrumbs.length - 1;
-            const path = breadcrumbs.slice(0, index + 1).join("/") + "/";
-            return (
-              <div key={index} className="flex items-center gap-2">
-                <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
-                {isLast ? (
-                  <span className="font-medium">{part}</span>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentPrefix(path)}
-                    className="h-7 px-2"
-                  >
-                    {part}
-                  </Button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <TreeViewBreadcrumb
+        treeViewEnabled={treeViewEnabled}
+        breadcrumbs={breadcrumbs}
+        setCurrentPrefix={setCurrentPrefix}
+      />
 
       <Card className="p-4">
         <Table>
@@ -200,7 +172,7 @@ export default function R2Bucket() {
                 return (
                   <TableRow
                     key={item.fullPath}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="hover:bg-muted/50 cursor-pointer"
                     onClick={() => navigateToFolder(item.fullPath)}
                   >
                     <TableCell></TableCell>
@@ -280,5 +252,55 @@ export default function R2Bucket() {
         </div>
       )}
     </>
+  );
+}
+
+interface BreadcrumbsProps {
+  treeViewEnabled?: boolean;
+  breadcrumbs: string[];
+  setCurrentPrefix: (prefix: string) => void;
+}
+
+function TreeViewBreadcrumb({
+  treeViewEnabled,
+  breadcrumbs,
+  setCurrentPrefix,
+}: BreadcrumbsProps) {
+  if (!treeViewEnabled || breadcrumbs.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setCurrentPrefix("")}
+        className="h-7 px-2"
+      >
+        Root
+      </Button>
+      {breadcrumbs.map((part, index) => {
+        const isLast = index === breadcrumbs.length - 1;
+        const path = breadcrumbs.slice(0, index + 1).join("/") + "/";
+        return (
+          <div key={index} className="flex items-center gap-2">
+            <ChevronRightIcon className="text-muted-foreground h-4 w-4" />
+            {isLast ? (
+              <span className="font-medium">{part}</span>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentPrefix(path)}
+                className="h-7 px-2"
+              >
+                {part}
+              </Button>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
