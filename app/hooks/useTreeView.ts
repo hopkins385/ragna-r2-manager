@@ -1,6 +1,7 @@
 import { R2Object } from "@/actions";
 import { useTreeViewStore } from "@/stores/tree-view.store";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 
 // Helper type for virtual folder items
 interface FolderItem {
@@ -23,7 +24,9 @@ export type DisplayItem = FolderItem | FileItem;
 
 export function useTreeView(objects: R2Object[]) {
   const { treeViewEnabled, setTreeViewEnabled } = useTreeViewStore();
-  const [currentPrefix, setCurrentPrefix] = useState<string>("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentPrefix = searchParams.get("prefix")?.trim() || "";
 
   // Parse objects into folders and files based on current prefix
   const displayItems = useMemo<DisplayItem[]>(() => {
@@ -78,6 +81,18 @@ export function useTreeView(objects: R2Object[]) {
       ...files.sort((a, b) => a.name.localeCompare(b.name)),
     ];
   }, [objects, treeViewEnabled, currentPrefix]);
+
+  // Helper function to update URL with new prefix
+  const setCurrentPrefix = (prefix: string) => {
+    const trimmedPrefix = prefix?.trim();
+    const params = new URLSearchParams(searchParams.toString()?.trim() || "");
+    if (trimmedPrefix) {
+      params.set("prefix", trimmedPrefix);
+    } else {
+      params.delete("prefix");
+    }
+    router.push(`?${params.toString()}`);
+  };
 
   // Navigate into a folder
   const navigateToFolder = (folderPath: string) => {

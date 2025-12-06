@@ -1,4 +1,5 @@
 import R2Bucket from "@/components/R2Bucket";
+import { Suspense } from "react";
 
 export default function Home() {
   return (
@@ -12,7 +13,9 @@ export default function Home() {
             Manage objects from your R2 buckets
           </p>
         </div>
-        <R2Bucket />
+        <Suspense fallback={<div>Loading...</div>}>
+          <R2Bucket />
+        </Suspense>
       </div>
     </main>
   );
