@@ -150,6 +150,7 @@ export async function uploadObject(
   bucketName: string,
   formData: FormData,
   prefix: string = "",
+  relativePath?: string,
 ) {
   if (!bucketName) {
     throw new Error("Bucket name is required");
@@ -164,8 +165,15 @@ export async function uploadObject(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Construct the full key with the prefix (folder path)
-    const key = prefix ? `${prefix}${file.name}` : file.name;
+    // Construct the full key with the prefix (folder path) and relative path
+    // If relativePath is provided, use it (this preserves folder structure)
+    // Otherwise, just use the file name
+    let key: string;
+    if (relativePath) {
+      key = prefix ? `${prefix}${relativePath}` : relativePath;
+    } else {
+      key = prefix ? `${prefix}${file.name}` : file.name;
+    }
 
     const command = new PutObjectCommand({
       Bucket: bucketName,

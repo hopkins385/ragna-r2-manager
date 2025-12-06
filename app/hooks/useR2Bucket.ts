@@ -8,6 +8,7 @@ import {
   uploadObject,
 } from "@/actions";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import type { FileWithPath } from "@/lib/folder-utils";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -166,15 +167,20 @@ export function useR2Bucket() {
     }
   };
 
-  const handleUpload = async (files: File[], prefix: string = "") => {
+  const handleUpload = async (files: FileWithPath[], prefix: string = "") => {
     if (!selectedBucket) return;
 
     try {
       // We could parallelize this, but let's do it sequentially for simplicity and error handling
-      for (const file of files) {
+      for (const fileWithPath of files) {
         const formData = new FormData();
-        formData.append("file", file);
-        await uploadObject(selectedBucket, formData, prefix);
+        formData.append("file", fileWithPath.file);
+        await uploadObject(
+          selectedBucket,
+          formData,
+          prefix,
+          fileWithPath.relativePath,
+        );
       }
       const location = prefix ? `${prefix} folder` : selectedBucket;
       toast.success(`Uploaded ${files.length} files to ${location}`);
