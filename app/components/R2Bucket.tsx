@@ -28,7 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui/table";
-import { ChevronRightIcon, FolderIcon, Trash2Icon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  DownloadIcon,
+  FolderIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useEffect } from "react";
 import { TableMenu } from "./TableMenu";
 
@@ -49,6 +54,7 @@ export default function R2Bucket() {
     handleDelete,
     handleDeleteAll,
     handleUpload,
+    handleDownload,
   } = useR2Bucket();
 
   const {
@@ -126,6 +132,14 @@ export default function R2Bucket() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDownload}
+            disabled={selectedKeys.size === 0 || loading}
+          >
+            <DownloadIcon className="h-4 w-4" />
+            Download
+          </Button>
           <Button
             variant="outline"
             onClick={handleDelete}

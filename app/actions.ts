@@ -3,6 +3,7 @@
 import { s3Client } from "@/lib/s3-client";
 import {
   DeleteObjectsCommand,
+  GetObjectCommand,
   ListBucketsCommand,
   ListObjectsV2Command,
   ListObjectsV2CommandOutput,
@@ -178,5 +179,40 @@ export async function uploadObject(
   } catch (error) {
     console.error("Error uploading object:", error);
     throw new Error("Failed to upload object");
+  }
+}
+
+export async function downloadObject(bucketName: string, key: string) {
+  if (!bucketName) {
+    throw new Error("Bucket name is required");
+  }
+
+  if (!key) {
+    throw new Error("Object key is required");
+  }
+
+  try {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    const response = await s3Client.send(command);
+
+    if (!response.Body) {
+      throw new Error("No data returned from S3");
+    }
+
+    // Convert the stream to a buffer
+    const buffer = await response.Body.transformToByteArray();
+
+    return {
+      data: Buffer.from(buffer).toString("base64"),
+      contentType: response.ContentType || "application/octet-stream",
+      contentLength: response.ContentLength,
+    };
+  } catch (error) {
+    console.error("Error downloading object:", error);
+    throw new Error("Failed to download object");
   }
 }

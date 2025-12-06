@@ -1,6 +1,7 @@
 import {
   deleteAllObjects,
   deleteObjects,
+  downloadObject,
   listBuckets,
   listObjects,
   R2Object,
@@ -186,6 +187,44 @@ export function useR2Bucket() {
     }
   };
 
+  const handleDownload = async () => {
+    if (!selectedBucket || selectedKeys.size === 0) return;
+
+    const keysToDownload = Array.from(selectedKeys);
+
+    try {
+      for (const key of keysToDownload) {
+        const result = await downloadObject(selectedBucket, key);
+
+        // Convert base64 to blob
+        const byteCharacters = atob(result.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: result.contentType });
+
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = key.split("/").pop() || key;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+
+      toast.success(
+        `Downloaded ${keysToDownload.length} file${keysToDownload.length > 1 ? "s" : ""}`,
+      );
+    } catch (err) {
+      console.error("Download failed", err);
+      toast.error("Failed to download files.");
+    }
+  };
+
   return {
     loadBuckets,
     buckets,
@@ -202,5 +241,6 @@ export function useR2Bucket() {
     handleDelete,
     handleDeleteAll,
     handleUpload,
+    handleDownload,
   };
 }
