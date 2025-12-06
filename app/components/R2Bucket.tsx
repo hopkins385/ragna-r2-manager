@@ -171,11 +171,13 @@ export default function R2Bucket() {
                 <Checkbox
                   checked={
                     treeViewEnabled
-                      ? displayItems.filter((item) => !item.isFolder).length > 0 &&
+                      ? displayItems.filter((item) => !item.isFolder).length >
+                          0 &&
                         displayItems
                           .filter((item) => !item.isFolder)
                           .every((item) => selectedKeys.has(item.object.key))
-                      : objects.length > 0 && selectedKeys.size === objects.length
+                      : objects.length > 0 &&
+                        selectedKeys.size === objects.length
                   }
                   onCheckedChange={() =>
                     toggleSelectAll(treeViewEnabled, displayItems)

@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
 import { R2Object } from "@/actions";
+import { useTreeViewStore } from "@/stores/tree-view.store";
+import { useMemo, useState } from "react";
 
 // Helper type for virtual folder items
 interface FolderItem {
@@ -21,8 +22,8 @@ interface FileItem {
 export type DisplayItem = FolderItem | FileItem;
 
 export function useTreeView(objects: R2Object[]) {
-  const [treeViewEnabled, setTreeViewEnabled] = useState(false);
-  const [currentPrefix, setCurrentPrefix] = useState("");
+  const { treeViewEnabled, setTreeViewEnabled } = useTreeViewStore();
+  const [currentPrefix, setCurrentPrefix] = useState<string>("");
 
   // Parse objects into folders and files based on current prefix
   const displayItems = useMemo<DisplayItem[]>(() => {
