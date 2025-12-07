@@ -1,12 +1,11 @@
 "use client";
 
 import type { FileWithPath } from "@/lib/folder-utils";
-import { processDroppedItems } from "@/lib/folder-utils";
+import { formatDroppedFiles } from "@/lib/folder-utils";
 import { Card, CardContent } from "@/ui/card";
 import { Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { toast } from "sonner";
 
 interface FileUploaderProps {
   onUpload: (files: FileWithPath[], prefix?: string) => Promise<void>;
@@ -21,48 +20,13 @@ export default function FileUploader({
 }: FileUploaderProps) {
   const [uploading, setUploading] = useState(false);
 
-  const handleDrop = useCallback(
-    async (event: React.DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      if (disabled || uploading) return;
-
-      setUploading(true);
-      try {
-        const items = event.dataTransfer.items;
-        const filesWithPaths = await processDroppedItems(items);
-
-        if (filesWithPaths.length === 0) {
-          toast.error("No files found in the dropped items");
-          return;
-        }
-
-        await onUpload(filesWithPaths, prefix);
-      } catch (error) {
-        console.error("Error processing dropped items:", error);
-        toast.error("Failed to process dropped files/folders");
-      } finally {
-        setUploading(false);
-      }
-    },
-    [onUpload, prefix, disabled, uploading],
-  );
-
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       if (acceptedFiles.length === 0) return;
 
       setUploading(true);
       try {
-        // Convert Files to FileWithPath, preserving folder structure
-        const filesWithPaths: FileWithPath[] = acceptedFiles.map((file) => ({
-          file,
-          // webkitRelativePath contains the full path including folder structure
-          // If empty (single file), use just the file name
-          relativePath: (file as any).webkitRelativePath || file.name,
-        }));
-
+        const filesWithPaths = formatDroppedFiles(acceptedFiles);
         await onUpload(filesWithPaths, prefix);
       } finally {
         setUploading(false);
@@ -79,7 +43,6 @@ export default function FileUploader({
   return (
     <Card
       {...getRootProps()}
-      onDrop={handleDrop}
       className={`cursor-pointer border-2 border-dashed transition-all ${
         isDragActive ? "border-primary bg-primary/5" : "hover:border-primary/50"
       } ${disabled || uploading ? "cursor-not-allowed opacity-50" : ""}`}

@@ -71,7 +71,7 @@ export function useR2Bucket() {
     }
   }, [selectedBucket]);
 
-  const toggleSelect = (key: string) => {
+  const toggleSelectKey = (key: string) => {
     const newSelected = new Set(selectedKeys);
     if (newSelected.has(key)) {
       newSelected.delete(key);
@@ -81,17 +81,22 @@ export function useR2Bucket() {
     setSelectedKeys(newSelected);
   };
 
-  const toggleSelectAll = (
+  const toggleSelectAllKeys = (
     treeViewEnabled?: boolean,
     displayItems?: Array<{ isFolder: boolean; object?: R2Object }>,
   ) => {
     // Determine which items to select/deselect
-    const itemsToConsider = treeViewEnabled && displayItems
-      ? displayItems.filter((item) => !item.isFolder && item.object).map((item) => item.object!.key)
-      : objects.map((o) => o.key);
+    const itemsToConsider =
+      treeViewEnabled && displayItems
+        ? displayItems
+            .filter((item) => !item.isFolder && item.object)
+            .map((item) => item.object!.key)
+        : objects.map((o) => o.key);
 
     // Check if all items in scope are already selected
-    const allSelected = itemsToConsider.length > 0 && itemsToConsider.every((key) => selectedKeys.has(key));
+    const allSelected =
+      itemsToConsider.length > 0 &&
+      itemsToConsider.every((key) => selectedKeys.has(key));
 
     if (allSelected) {
       // Deselect all items in scope
@@ -106,7 +111,11 @@ export function useR2Bucket() {
     }
   };
 
-  const handleDelete = async () => {
+  const unselectAllKeys = () => {
+    setSelectedKeys(new Set());
+  };
+
+  const handleDeleteObjects = async () => {
     const confirmed = await confirm({
       title: "Delete Objects",
       description: `Are you sure you want to delete ${selectedKeys.size} objects from ${selectedBucket}?`,
@@ -147,7 +156,7 @@ export function useR2Bucket() {
     }
   };
 
-  const handleDeleteAll = async () => {
+  const handleDeleteAllObjects = async () => {
     const confirmed1 = await confirm({
       title: "Delete All Objects - Warning",
       description: `This will delete ALL objects in bucket "${selectedBucket}". This action cannot be undone.`,
@@ -184,7 +193,10 @@ export function useR2Bucket() {
     }
   };
 
-  const handleUpload = async (files: FileWithPath[], prefix: string = "") => {
+  const handleUploadObjects = async (
+    files: FileWithPath[],
+    prefix: string = "",
+  ) => {
     if (!selectedBucket) return;
 
     try {
@@ -209,7 +221,7 @@ export function useR2Bucket() {
     }
   };
 
-  const handleDownload = async () => {
+  const handleDownloadObjects = async () => {
     if (!selectedBucket || selectedKeys.size === 0) return;
 
     const keysToDownload = Array.from(selectedKeys);
@@ -254,11 +266,12 @@ export function useR2Bucket() {
     deleting,
     hasMore,
     fetchObjects,
-    toggleSelect,
-    toggleSelectAll,
-    handleDelete,
-    handleDeleteAll,
-    handleUpload,
-    handleDownload,
+    toggleSelectKey,
+    toggleSelectAllKeys,
+    unselectAllKeys,
+    handleDeleteObjects,
+    handleDeleteAllObjects,
+    handleUploadObjects,
+    handleDownloadObjects,
   };
 }

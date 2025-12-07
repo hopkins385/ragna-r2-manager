@@ -1,8 +1,12 @@
 "use client";
 
 import FileUploader from "@/components/FileUploader";
+import { useLocale } from "@/hooks/useLocale";
 import { useR2Bucket } from "@/hooks/useR2Bucket";
 import { useTreeView } from "@/hooks/useTreeView";
+import { formatDate } from "@/lib/format-date";
+import { formatFileSize } from "@/lib/format-file-size";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import {
@@ -34,10 +38,11 @@ import {
   FolderIcon,
   Trash2Icon,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { TableMenu } from "./TableMenu";
 
 export default function R2Bucket() {
+  const { locale } = useLocale();
   const {
     loadBuckets,
     buckets,
@@ -49,12 +54,13 @@ export default function R2Bucket() {
     deleting,
     hasMore,
     fetchObjects,
-    toggleSelect,
-    toggleSelectAll,
-    handleDelete,
-    handleDeleteAll,
-    handleUpload,
-    handleDownload,
+    toggleSelectKey,
+    toggleSelectAllKeys,
+    unselectAllKeys,
+    handleDeleteObjects,
+    handleDeleteAllObjects,
+    handleUploadObjects,
+    handleDownloadObjects,
   } = useR2Bucket();
 
   const {
@@ -67,6 +73,18 @@ export default function R2Bucket() {
     breadcrumbs,
     resetPrefix,
   } = useTreeView(objects);
+
+  // Determine if all items are selected, optional all of those in current folder/treeView
+  const isAllSelected = useMemo(() => {
+    if (treeViewEnabled) {
+      const files = displayItems.filter((item) => !item.isFolder);
+      return (
+        files.length > 0 &&
+        files.every((item) => selectedKeys.has(item.object.key))
+      );
+    }
+    return objects.length > 0 && selectedKeys.size === objects.length;
+  }, [treeViewEnabled, displayItems, selectedKeys, objects]);
 
   // Watch: When bucket changes or tree view is toggled, Reset prefix to root
   useEffect(() => {
@@ -105,7 +123,7 @@ export default function R2Bucket() {
 
       {selectedBucket && (
         <FileUploader
-          onUpload={handleUpload}
+          onUpload={handleUploadObjects}
           disabled={loading || deleting}
           prefix={treeViewEnabled ? currentPrefix : undefined}
         />
@@ -114,7 +132,16 @@ export default function R2Bucket() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Badge variant="secondary">{objects.length} objects loaded</Badge>
-          <Badge variant="secondary">{selectedKeys.size} selected</Badge>
+          <Badge
+            variant="secondary"
+            className={cn(
+              "cursor-pointer",
+              selectedKeys.size === 0 ? "" : "bg-green-200 text-green-800",
+            )}
+            onClick={() => unselectAllKeys()}
+          >
+            {selectedKeys.size} selected
+          </Badge>
           <div className="flex items-center gap-2">
             <Checkbox
               id="tree-view"
@@ -134,7 +161,7 @@ export default function R2Bucket() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={handleDownload}
+            onClick={handleDownloadObjects}
             disabled={selectedKeys.size === 0 || loading}
           >
             <DownloadIcon className="h-4 w-4" />
@@ -142,7 +169,7 @@ export default function R2Bucket() {
           </Button>
           <Button
             variant="outline"
-            onClick={handleDelete}
+            onClick={handleDeleteObjects}
             disabled={selectedKeys.size === 0 || deleting}
             className="hover:text-destructive"
           >
@@ -150,7 +177,7 @@ export default function R2Bucket() {
             {deleting ? "Deleting..." : "Delete Selected"}
           </Button>
           <TableMenu
-            handleDeleteAll={handleDeleteAll}
+            handleDeleteAll={handleDeleteAllObjects}
             selectedBucket={selectedBucket}
             deleting={deleting}
           />
@@ -169,24 +196,15 @@ export default function R2Bucket() {
             <TableRow>
               <TableHead className="w-12">
                 <Checkbox
-                  checked={
-                    treeViewEnabled
-                      ? displayItems.filter((item) => !item.isFolder).length >
-                          0 &&
-                        displayItems
-                          .filter((item) => !item.isFolder)
-                          .every((item) => selectedKeys.has(item.object.key))
-                      : objects.length > 0 &&
-                        selectedKeys.size === objects.length
-                  }
+                  checked={isAllSelected}
                   onCheckedChange={() =>
-                    toggleSelectAll(treeViewEnabled, displayItems)
+                    toggleSelectAllKeys(treeViewEnabled, displayItems)
                   }
                 />
               </TableHead>
               <TableHead>Key</TableHead>
               <TableHead>Size</TableHead>
-              <TableHead>Last Modified</TableHead>
+              <TableHead className="text-right">Last Modified</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -208,7 +226,7 @@ export default function R2Bucket() {
                     <TableCell className="text-muted-foreground">
                       Folder
                     </TableCell>
-                    <TableCell>-</TableCell>
+                    <TableCell className="text-right">-</TableCell>
                   </TableRow>
                 );
               }
@@ -223,7 +241,7 @@ export default function R2Bucket() {
                   <TableCell>
                     <Checkbox
                       checked={selectedKeys.has(item.object.key)}
-                      onCheckedChange={() => toggleSelect(item.object.key)}
+                      onCheckedChange={() => toggleSelectKey(item.object.key)}
                     />
                   </TableCell>
                   <TableCell
@@ -233,14 +251,10 @@ export default function R2Bucket() {
                     {treeViewEnabled ? item.name : item.object.key}
                   </TableCell>
                   <TableCell>
-                    {item.object.size
-                      ? (item.object.size / 1024).toFixed(2) + " KB"
-                      : "-"}
+                    {formatFileSize(item.object.size ?? -1)}
                   </TableCell>
-                  <TableCell>
-                    {item.object.lastModified
-                      ? new Date(item.object.lastModified).toLocaleString()
-                      : "-"}
+                  <TableCell className="text-right">
+                    {formatDate(item.object.lastModified, { locale })}
                   </TableCell>
                 </TableRow>
               );
