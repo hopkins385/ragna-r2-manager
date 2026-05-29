@@ -1,6 +1,6 @@
 {
   "name": "ragna-r2-manager",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "description": "Cloudflare R2 multi bucket manager allowing easy uploads and mass deletions.",
   "author": {
