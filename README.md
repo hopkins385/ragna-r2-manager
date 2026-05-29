@@ -18,7 +18,7 @@ A modern Next.js application for managing Cloudflare R2 bucket objects with an i
 
 - **Framework**: Next.js 16 with React 19
 - **Styling**: TailwindCSS 4 with Radix UI components
-- **Storage**: Cloudflare R2 via AWS SDK S3 client
+- **Storage**: Cloudflare R2 via [s3mini](https://www.npmjs.com/package/s3mini)
 - **File Handling**: react-dropzone for uploads
 - **UI Components**: Radix UI primitives with shadcn/ui patterns
 
@@ -38,10 +38,10 @@ A modern Next.js application for managing Cloudflare R2 bucket objects with an i
     R2_ACCOUNT_ID="your_account_id"
     R2_ACCESS_KEY_ID="your_access_key_id"
     R2_SECRET_ACCESS_KEY="your_secret_access_key"
-    R2_BUCKET_NAME="your_default_bucket_name"
+    R2_BUCKET_NAMES="bucket-one,bucket-two"
     ```
 
-    You can obtain these credentials from your Cloudflare dashboard under R2 settings.
+    `R2_BUCKET_NAMES` is a comma-separated list of bucket names to expose in the UI. You can obtain credentials from your Cloudflare dashboard under R2 settings.
 
 3.  **Run the development server:**
 

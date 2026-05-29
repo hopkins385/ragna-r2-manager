@@ -1,14 +1,6 @@
 "use server";
 
-import { s3Client } from "@/lib/s3-client";
-import {
-  DeleteObjectsCommand,
-  GetObjectCommand,
-  ListBucketsCommand,
-  ListObjectsV2Command,
-  ListObjectsV2CommandOutput,
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { createS3Client } from "@/lib/s3-client";
 
 export interface R2Object {
   key: string;
@@ -17,19 +9,9 @@ export interface R2Object {
 }
 
 export async function listBuckets() {
-  try {
-    const command = new ListBucketsCommand({});
-    const response = await s3Client.send(command);
-    return (
-      response.Buckets?.map((b) => b.Name).filter((n): n is string => !!n) || []
-    );
-  } catch (error) {
-    console.error("Error listing buckets:", error);
-    // Fallback to env var if listing fails (e.g. permissions)
-    const envBucket = process.env.R2_BUCKET_NAME;
-    if (envBucket) return [envBucket];
-    return [];
-  }
+  const names = process.env.R2_BUCKET_NAMES;
+  if (!names) return [];
+  return names.split(",").map((b) => b.trim()).filter(Boolean);
 }
 
 export async function listObjects(
@@ -42,17 +24,11 @@ export async function listObjects(
   }
 
   try {
-    const command = new ListObjectsV2Command({
-      Bucket: bucketName,
-      Prefix: prefix,
-      ContinuationToken: cursor,
-      MaxKeys: 50,
-    });
-
-    const response = await s3Client.send(command);
+    const s3 = createS3Client(bucketName);
+    const response = await s3.listObjectsPaged("/", prefix, 50, cursor);
 
     const objects: R2Object[] =
-      response.Contents?.map((item) => ({
+      response?.objects?.map((item) => ({
         key: item.Key || "",
         lastModified: item.LastModified,
         size: item.Size,
@@ -60,8 +36,8 @@ export async function listObjects(
 
     return {
       objects,
-      nextCursor: response.NextContinuationToken,
-      isTruncated: response.IsTruncated,
+      nextCursor: response?.nextContinuationToken,
+      isTruncated: !!response?.nextContinuationToken,
     };
   } catch (error) {
     console.error("Error listing objects:", error);
@@ -77,20 +53,17 @@ export async function deleteObjects(bucketName: string, keys: string[]) {
   if (keys.length === 0) return { deleted: [], errors: [] };
 
   try {
-    const command = new DeleteObjectsCommand({
-      Bucket: bucketName,
-      Delete: {
-        Objects: keys.map((key) => ({ Key: key })),
-        Quiet: false,
-      },
-    });
+    const s3 = createS3Client(bucketName);
+    const results = await s3.deleteObjects(keys);
 
-    const response = await s3Client.send(command);
+    const deleted = keys
+      .filter((_, i) => results[i])
+      .map((key) => ({ Key: key }));
+    const errors = keys
+      .filter((_, i) => !results[i])
+      .map((key) => ({ Key: key, Message: "Delete failed" }));
 
-    return {
-      deleted: response.Deleted || [],
-      errors: response.Errors || [],
-    };
+    return { deleted, errors };
   } catch (error) {
     console.error("Error deleting objects:", error);
     throw new Error("Failed to delete objects");
@@ -103,40 +76,27 @@ export async function deleteAllObjects(bucketName: string) {
   }
 
   let deletedCount = 0;
-  let continuationToken: string | undefined = undefined;
+  let token: string | undefined = undefined;
   let hasMore = true;
 
   try {
+    const s3 = createS3Client(bucketName);
+
     while (hasMore) {
-      const listCommand = new ListObjectsV2Command({
-        Bucket: bucketName,
-        ContinuationToken: continuationToken,
-      });
+      const page = await s3.listObjectsPaged("/", "", 1000, token);
+      const objects = page?.objects;
 
-      const listResponse: ListObjectsV2CommandOutput =
-        await s3Client.send(listCommand);
-
-      const objects = listResponse.Contents;
       if (!objects || objects.length === 0) {
         hasMore = false;
         break;
       }
 
-      const keys = objects.map((o) => ({ Key: o.Key }));
+      const objectKeys = objects.map((o) => o.Key);
+      await s3.deleteObjects(objectKeys);
+      deletedCount += objectKeys.length;
 
-      const deleteCommand = new DeleteObjectsCommand({
-        Bucket: bucketName,
-        Delete: {
-          Objects: keys,
-          Quiet: true,
-        },
-      });
-
-      await s3Client.send(deleteCommand);
-      deletedCount += keys.length;
-
-      continuationToken = listResponse.NextContinuationToken;
-      hasMore = !!continuationToken;
+      token = page?.nextContinuationToken;
+      hasMore = !!token;
     }
 
     return { success: true, count: deletedCount };
@@ -165,9 +125,6 @@ export async function uploadObject(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Construct the full key with the prefix (folder path) and relative path
-    // If relativePath is provided, use it (this preserves folder structure)
-    // Otherwise, just use the file name
     let key: string;
     if (relativePath) {
       key = prefix ? `${prefix}${relativePath}` : relativePath;
@@ -175,14 +132,9 @@ export async function uploadObject(
       key = prefix ? `${prefix}${file.name}` : file.name;
     }
 
-    const command = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-      Body: buffer,
-      ContentType: file.type,
-    });
+    const s3 = createS3Client(bucketName);
+    await s3.putAnyObject(key, buffer, file.type);
 
-    await s3Client.send(command);
     return { success: true, key };
   } catch (error) {
     console.error("Error uploading object:", error);
@@ -200,24 +152,19 @@ export async function downloadObject(bucketName: string, key: string) {
   }
 
   try {
-    const command = new GetObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-    });
+    const s3 = createS3Client(bucketName);
+    const response = await s3.getObjectResponse(key);
 
-    const response = await s3Client.send(command);
-
-    if (!response.Body) {
+    if (!response) {
       throw new Error("No data returned from S3");
     }
 
-    // Convert the stream to a buffer
-    const buffer = await response.Body.transformToByteArray();
+    const buffer = await response.arrayBuffer();
 
     return {
       data: Buffer.from(buffer).toString("base64"),
-      contentType: response.ContentType || "application/octet-stream",
-      contentLength: response.ContentLength,
+      contentType: response.headers.get("content-type") || "application/octet-stream",
+      contentLength: Number(response.headers.get("content-length")) || undefined,
     };
   } catch (error) {
     console.error("Error downloading object:", error);
